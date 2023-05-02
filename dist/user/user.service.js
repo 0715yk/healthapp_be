@@ -66,12 +66,6 @@ let UserService = class UserService {
             const dates = await this.datesRepository.find({ where: { userId: id } });
             dates.forEach(async (date) => {
                 const dateId = date.id;
-                const workoutNums = await this.workoutNumRepository.find({
-                    where: { datesId: dateId },
-                });
-                workoutNums.forEach(async (workoutNum) => {
-                    await this.workoutService.deleteWorkoutNum(dateId, workoutNum.id);
-                });
                 await this.datesRepository.delete({ id: dateId });
             });
             const result = await this.userRepository.delete({ id: id });

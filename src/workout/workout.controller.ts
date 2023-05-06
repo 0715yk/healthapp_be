@@ -20,6 +20,18 @@ export class WorkoutController {
     private jwtService: JwtService,
   ) {}
 
+  @Get('/latest')
+  @UseGuards(JwtAuthGuard)
+  getLatestWorkout(@Req() req) {
+    const pureToken = req?.headers['authorization']?.substring(7);
+    const response = this.jwtService.decode(pureToken) as {
+      userId: string;
+      sub: number;
+    };
+    const id = response.sub;
+    return this.workoutService.getLatestWorkout(id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   create(@Req() req, @Body() body: any) {

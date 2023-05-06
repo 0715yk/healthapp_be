@@ -3,7 +3,6 @@ import { WorkoutNum } from './entities/workoutNum.entity';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
-import { UpdateWorkoutDto } from './dto/update-workout.dto';
 import { Dates } from './entities/dates.entity';
 import { Repository, DataSource } from 'typeorm';
 import { WorkoutName } from './entities/workoutName.entity';
@@ -23,6 +22,53 @@ export class WorkoutService {
     private workoutRepository: Repository<Workout>,
     private jwtService: JwtService,
   ) {}
+
+  async getLatestWorkout(id: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const dates = await this.datesRepository.find({
+        where: {
+          userId: id,
+        },
+        order: {
+          id: {
+            direction: 'DESC',
+          },
+        },
+      });
+
+      const latestDatesId = dates[0].id;
+      const latestDate = dates[0].date;
+      const workoutNums = await this.workoutNumRepository.find({
+        where: {
+          datesId: latestDatesId,
+        },
+        order: {
+          id: {
+            direction: 'DESC',
+          },
+        },
+      });
+      const latestWorkoutNumId = workoutNums[0].id;
+
+      const data = await this.dataSource
+        .getRepository(WorkoutNum)
+        .createQueryBuilder('workoutNum')
+        .leftJoinAndSelect('workoutNum.workoutNames', 'workoutName')
+        .leftJoinAndSelect('workoutName.workouts', 'workout')
+        .where('workoutNum.id = :id', { id: latestWorkoutNumId })
+        .getMany();
+
+      return { ...data, latestDate };
+    } catch (err) {
+      console.error(err);
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
   // TODO => 자동으로 생성하게 코드 간편화하기
   async create(userId: number, body: any) {
@@ -225,14 +271,6 @@ export class WorkoutService {
     } catch {}
   }
 
-  async getLatestWorkout(id: number, workoutName: string) {
-    try {
-      // const response = await this.workoutNameRepository.findOneBy();
-      // userId 만 가지고 date 테이블에서 order한다음에 첫번째 데이터의 id값을 가져온다음에
-      // 그 id를 가지고 workoutNum
-    } catch {}
-  }
-
   async findWorkouts(id: number, date: string) {
     // 유저id, date 값을 바탕으로 datesId를 가져옴(이건 무조건 한개임)
 
@@ -249,13 +287,5 @@ export class WorkoutService {
 
     const result = data[0]?.dates[0]?.workoutNumbers;
     return result;
-  }
-
-  update(id: number, updateWorkoutDto: UpdateWorkoutDto) {
-    return `This action updates a #${id} workout`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} workout`;
   }
 }

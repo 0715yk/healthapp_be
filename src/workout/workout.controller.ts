@@ -94,6 +94,7 @@ export class WorkoutController {
   }
 
   @Patch('workoutSet/:id')
+  @UseGuards(JwtAuthGuard)
   updateWorkoutSet(
     @Param('id') id: number,
     @Body()
@@ -106,6 +107,7 @@ export class WorkoutController {
   }
 
   @Patch('workoutName/:id')
+  @UseGuards(JwtAuthGuard)
   updateWorkoutName(
     @Param('id') id: number,
     @Body('workoutName')

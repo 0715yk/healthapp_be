@@ -27,6 +27,7 @@ export class WorkoutService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       const dates = await this.datesRepository.find({
         where: {
@@ -103,8 +104,9 @@ export class WorkoutService {
         // 여기서 이 workoutNumId를 가지고 workoutName을 등록해야하는데,,,,
         // 흠..이건 배열로 받아서 forEach로 하나씩 등록해보자
         const resultId = workoutNumResult?.id;
+
         if (resultId) {
-          workouts.forEach(async (workoutArr) => {
+          for (const workoutArr of workouts) {
             const workoutNumObj = await this.workoutNameRepository.create({
               workoutNumId: resultId,
               workoutName: workoutArr[0].name,
@@ -115,7 +117,7 @@ export class WorkoutService {
 
             const workoutNumResultId = workoutNumResult.id;
             if (workoutNumResultId) {
-              workoutArr.forEach(async (workout) => {
+              for (const workout of workoutArr) {
                 const workoutNumObj = await this.workoutRepository.create({
                   workoutNameId: workoutNumResultId,
                   set: workout.set,
@@ -124,9 +126,9 @@ export class WorkoutService {
                   bestSet: workout.bestSet,
                 });
                 await this.workoutRepository.save(workoutNumObj);
-              });
+              }
             }
-          });
+          }
         }
       } else {
         // 한번도 안했으면
@@ -150,7 +152,7 @@ export class WorkoutService {
         const resultId = workoutNumResult?.id;
 
         if (resultId) {
-          workouts.forEach(async (workoutArr) => {
+          for (const workoutArr of workouts) {
             const workoutNumObj = await this.workoutNameRepository.create({
               workoutNumId: resultId,
               workoutName: workoutArr[0].name,
@@ -160,7 +162,7 @@ export class WorkoutService {
             );
             const workoutNumResultId = workoutNumResult.id;
             if (workoutNumResultId) {
-              workoutArr.forEach(async (workout) => {
+              for (const workout of workoutArr) {
                 const workoutNumObj = await this.workoutRepository.create({
                   workoutNameId: workoutNumResultId,
                   set: workout.set,
@@ -169,9 +171,9 @@ export class WorkoutService {
                   bestSet: workout.bestSet,
                 });
                 await this.workoutRepository.save(workoutNumObj);
-              });
+              }
             }
-          });
+          }
         }
 
         return workoutNumResult;

@@ -12,6 +12,8 @@ import {
   Req,
   Patch,
   Delete,
+  Res,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LoginRequestDto } from 'src/auth/dto/login.request.dto';
@@ -97,5 +99,29 @@ export class UserController {
   updateNickname(@Req() req, @Body() body) {
     const nickname = body.nickname;
     this.userSerivce.updateNickname(req.headers['authorization'], nickname);
+  }
+
+  @Get('kakao')
+  async kakaoLogin(
+    @Res() res,
+    @Query() query: { code: string },
+  ): Promise<void> {
+    const { code } = query;
+
+    const response = await this.userSerivce.socialLogin(code);
+    // 다른 도메인으로는 이렇게 쿠키를 넣은채 redirect 할 수 없다??
+    if (response?.jwtToken) {
+      return res.redirect(
+        `${process.env.FE_URL}main?code=${response.jwtToken}`,
+      );
+    } else {
+      return res.redirect(`${process.env.CANCEL_REDIRECT_URL}?type=cancel`);
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('kakaoLogout')
+  async kakaoLogout(@Req() req): Promise<void> {
+    await this.userSerivce.kakaoLogout(req.headers['authorization']);
   }
 }

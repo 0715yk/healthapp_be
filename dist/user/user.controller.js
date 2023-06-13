@@ -39,8 +39,8 @@ let UserController = class UserController {
         const response = this.authService.jwtLogin(data);
         return response;
     }
-    deleteUser(req) {
-        this.userSerivce.deleteUser(req.headers['authorization']);
+    deleteUser(data, req) {
+        this.userSerivce.deleteUser(req.headers['authorization'], data.loginType);
     }
     updateNickname(req, body) {
         const nickname = body.nickname;
@@ -133,11 +133,11 @@ __decorate([
         status: 200,
         description: '성공!',
     }),
-    (0, common_1.Delete)(),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
-    __param(0, (0, common_1.Req)()),
+    (0, common_1.Post)('delete'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "deleteUser", null);
 __decorate([

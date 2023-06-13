@@ -224,7 +224,7 @@ export class UserService {
     return result;
   }
 
-  async deleteUser(token: string) {
+  async deleteUser(token: string, loginType: string) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -241,7 +241,7 @@ export class UserService {
       await this.datesRepository.delete({ userId: id });
       const result = await this.userRepository.delete({ id: id });
 
-      if (response.jwtToken !== undefined) {
+      if (loginType === 'kakako') {
         const ACCESS_TOKEN = response.jwtToken;
 
         await axios.get('https://kapi.kakao.com/v1/user/unlink', {
@@ -250,6 +250,16 @@ export class UserService {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
         });
+      } else if (loginType === 'google') {
+        const ACCESS_TOKEN = response.jwtToken;
+        await axios.post(
+          `https://oauth2.googleapis.com/revoke?token=${ACCESS_TOKEN}`,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          },
+        );
       }
 
       return result;

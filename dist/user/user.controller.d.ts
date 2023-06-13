@@ -16,7 +16,9 @@ export declare class UserController {
         nickname: string;
         token: string;
     }>;
-    deleteUser(req: any): void;
+    deleteUser(data: {
+        loginType: string;
+    }, req: any): void;
     updateNickname(req: any, body: any): void;
     kakaoLogin(res: any, query: {
         code: string;

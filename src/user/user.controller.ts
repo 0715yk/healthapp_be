@@ -11,7 +11,6 @@ import {
   UsePipes,
   Req,
   Patch,
-  Delete,
   Res,
   Query,
 } from '@nestjs/common';
@@ -83,10 +82,9 @@ export class UserController {
     status: 200,
     description: '성공!',
   })
-  @Delete()
-  @UseGuards(JwtAuthGuard)
-  deleteUser(@Req() req) {
-    this.userSerivce.deleteUser(req.headers['authorization']);
+  @Post('delete')
+  deleteUser(@Body() data: { loginType: string }, @Req() req) {
+    this.userSerivce.deleteUser(req.headers['authorization'], data.loginType);
   }
 
   @ApiResponse({

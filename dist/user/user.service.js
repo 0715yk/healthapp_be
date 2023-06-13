@@ -160,7 +160,7 @@ let UserService = class UserService {
         const result = await this.userRepository.update({ id: id }, { nickname: nickname });
         return result;
     }
-    async deleteUser(token) {
+    async deleteUser(token, loginType) {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -170,11 +170,19 @@ let UserService = class UserService {
             const id = response.sub;
             await this.datesRepository.delete({ userId: id });
             const result = await this.userRepository.delete({ id: id });
-            if (response.jwtToken !== undefined) {
+            if (loginType === 'kakako') {
                 const ACCESS_TOKEN = response.jwtToken;
                 await axios_1.default.get('https://kapi.kakao.com/v1/user/unlink', {
                     headers: {
                         Authorization: `Bearer ${ACCESS_TOKEN}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                });
+            }
+            else if (loginType === 'google') {
+                const ACCESS_TOKEN = response.jwtToken;
+                await axios_1.default.post(`https://oauth2.googleapis.com/revoke?token=${ACCESS_TOKEN}`, {
+                    headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
                 });

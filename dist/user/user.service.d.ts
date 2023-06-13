@@ -27,7 +27,7 @@ export declare class UserService {
         jwtToken: string;
     }>;
     updateNickname(token: string, nickname: string): Promise<import("typeorm").UpdateResult>;
-    deleteUser(token: string): Promise<import("typeorm").DeleteResult>;
+    deleteUser(token: string, loginType: string): Promise<import("typeorm").DeleteResult>;
     kakaoLogout(token: string): Promise<void>;
     googleLogout(token: string): Promise<void>;
 }

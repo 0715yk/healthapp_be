@@ -22,4 +22,8 @@ export declare class UserController {
         code: string;
     }): Promise<void>;
     kakaoLogout(req: any): Promise<void>;
+    googleLogin(res: any, query: {
+        code: string;
+    }): Promise<void>;
+    googleLogout(req: any): Promise<void>;
 }

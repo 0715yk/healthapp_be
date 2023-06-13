@@ -107,7 +107,6 @@ export class UserController {
     @Query() query: { code: string },
   ): Promise<void> {
     const { code } = query;
-
     const response = await this.userSerivce.socialLogin(code);
     // 다른 도메인으로는 이렇게 쿠키를 넣은채 redirect 할 수 없다??
     if (response?.jwtToken) {
@@ -123,5 +122,30 @@ export class UserController {
   @Get('kakaoLogout')
   async kakaoLogout(@Req() req): Promise<void> {
     await this.userSerivce.kakaoLogout(req.headers['authorization']);
+  }
+
+  @Get('google')
+  async googleLogin(
+    @Res() res,
+    @Query() query: { code: string },
+  ): Promise<void> {
+    const { code } = query;
+
+    const response = await this.userSerivce.socialLoginGoogle(code);
+
+    // 다른 도메인으로는 이렇게 쿠키를 넣은채 redirect 할 수 없다??
+    if (response?.jwtToken) {
+      return res.redirect(
+        `${process.env.FE_URL}main?code=${response.jwtToken}`,
+      );
+    } else {
+      return res.redirect(`${process.env.CANCEL_REDIRECT_URL}?type=cancel`);
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('googleLogout')
+  async googleLogout(@Req() req): Promise<void> {
+    await this.userSerivce.googleLogout(req.headers['authorization']);
   }
 }

@@ -143,6 +143,72 @@ export class UserService {
     }
   }
 
+  async socialLoginGoogle(code: string) {
+    const postBody = {
+      code,
+      client_id: `${process.env.GOOGLE_CLIENT_ID}`,
+      redirect_uri: `${process.env.GOOGLE_REDIRECT_URL}`,
+      grant_type: 'authorization_code',
+      client_secret: `${process.env.GOOGLE_CLIENT_SECRET_KEY}`,
+      access_type: 'offline',
+    };
+
+    try {
+      // fetch로 하니까 안됨.. why?
+
+      const response = await axios.post(
+        `${process.env.GOOGLE_LOGIN_URL}`,
+        postBody,
+        {
+          headers: {
+            'Content-type': 'application/x-www-form-urlencoded',
+          },
+        },
+      );
+
+      const data = response.data;
+      const ACCESS_TOKEN = data.access_token;
+      const userInform = await axios.get(
+        `https://www.googleapis.com/userinfo/v2/me?access_token=${ACCESS_TOKEN}`,
+      );
+
+      const userInformResponse = userInform.data;
+
+      const { email, name } = userInformResponse;
+      const nickname = name.replace(/ /g, '');
+      const isUserExist = await this.userRepository.findOneBy({
+        userId: email,
+      });
+
+      if (isUserExist) {
+        // 이미 존재한다면
+        const payload = {
+          userId: email,
+          sub: isUserExist.id,
+          jwtToken: ACCESS_TOKEN,
+        };
+        const jwtToken = this.jwtService.sign(payload);
+        return { nickname, jwtToken };
+      } else {
+        const hashedPassword = await bcrypt.hash(email, 10);
+        // 비밀번호가  필요없음 그러나 일단은 email 로 만들기
+        // 암호화
+        const userObj = await this.userRepository.create({
+          userId: email,
+          nickname,
+          password: hashedPassword,
+        });
+        const user = await this.userRepository.save(userObj);
+        const payload = { userId: email, sub: user.id, jwtToken: ACCESS_TOKEN };
+
+        const jwtToken = this.jwtService.sign(payload);
+        return { nickname, jwtToken };
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async updateNickname(token: string, nickname: string) {
     const pureToken = token.substring(7);
     const response = this.jwtService.decode(pureToken) as {
@@ -210,6 +276,28 @@ export class UserService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async googleLogout(token: string) {
+    const pureToken = token.substring(7);
+    const response = this.jwtService.decode(pureToken) as {
+      sub: number;
+      jwtToken: string;
+      userid: string;
+    };
+    const ACCESS_TOKEN = response.jwtToken;
+    try {
+      await axios.post(
+        `https://oauth2.googleapis.com/revoke?token=${ACCESS_TOKEN}`,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+      );
     } catch (e) {
       console.log(e);
     }

@@ -103,6 +103,56 @@ let UserService = class UserService {
             console.log(e);
         }
     }
+    async socialLoginGoogle(code) {
+        const postBody = {
+            code,
+            client_id: `${process.env.GOOGLE_CLIENT_ID}`,
+            redirect_uri: `${process.env.GOOGLE_REDIRECT_URL}`,
+            grant_type: 'authorization_code',
+            client_secret: `${process.env.GOOGLE_CLIENT_SECRET_KEY}`,
+            access_type: 'offline',
+        };
+        try {
+            const response = await axios_1.default.post(`${process.env.GOOGLE_LOGIN_URL}`, postBody, {
+                headers: {
+                    'Content-type': 'application/x-www-form-urlencoded',
+                },
+            });
+            const data = response.data;
+            const ACCESS_TOKEN = data.access_token;
+            const userInform = await axios_1.default.get(`https://www.googleapis.com/userinfo/v2/me?access_token=${ACCESS_TOKEN}`);
+            const userInformResponse = userInform.data;
+            const { email, name } = userInformResponse;
+            const nickname = name.replace(/ /g, '');
+            const isUserExist = await this.userRepository.findOneBy({
+                userId: email,
+            });
+            if (isUserExist) {
+                const payload = {
+                    userId: email,
+                    sub: isUserExist.id,
+                    jwtToken: ACCESS_TOKEN,
+                };
+                const jwtToken = this.jwtService.sign(payload);
+                return { nickname, jwtToken };
+            }
+            else {
+                const hashedPassword = await bcrypt.hash(email, 10);
+                const userObj = await this.userRepository.create({
+                    userId: email,
+                    nickname,
+                    password: hashedPassword,
+                });
+                const user = await this.userRepository.save(userObj);
+                const payload = { userId: email, sub: user.id, jwtToken: ACCESS_TOKEN };
+                const jwtToken = this.jwtService.sign(payload);
+                return { nickname, jwtToken };
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
     async updateNickname(token, nickname) {
         const pureToken = token.substring(7);
         const response = this.jwtService.decode(pureToken);
@@ -147,6 +197,21 @@ let UserService = class UserService {
             await axios_1.default.get('https://kapi.kakao.com/v1/user/unlink', {
                 headers: {
                     Authorization: `Bearer ${ACCESS_TOKEN}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            });
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+    async googleLogout(token) {
+        const pureToken = token.substring(7);
+        const response = this.jwtService.decode(pureToken);
+        const ACCESS_TOKEN = response.jwtToken;
+        try {
+            await axios_1.default.post(`https://oauth2.googleapis.com/revoke?token=${ACCESS_TOKEN}`, {
+                headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
             });

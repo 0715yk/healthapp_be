@@ -122,14 +122,14 @@ export class UserController {
     await this.userSerivce.kakaoLogout(req.headers['authorization']);
   }
 
-  @Get('google')
-  async googleLogin(
+  @Get('naver')
+  async naverLogin(
     @Res() res,
-    @Query() query: { code: string },
+    @Query() query: { code: string; state: string },
   ): Promise<void> {
-    const { code } = query;
+    const { code, state } = query;
 
-    const response = await this.userSerivce.socialLoginGoogle(code);
+    const response = await this.userSerivce.socialLoginNaver(code, state);
 
     // 다른 도메인으로는 이렇게 쿠키를 넣은채 redirect 할 수 없다??
     if (response?.jwtToken) {
@@ -142,8 +142,8 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('googleLogout')
-  async googleLogout(@Req() req): Promise<void> {
-    await this.userSerivce.googleLogout(req.headers['authorization']);
+  @Get('naverLogout')
+  async naverLogout(@Req() req): Promise<void> {
+    await this.userSerivce.naverLogout(req.headers['authorization']);
   }
 }

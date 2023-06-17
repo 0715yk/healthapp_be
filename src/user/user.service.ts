@@ -69,17 +69,6 @@ export class UserService {
       );
 
       const data = response.data;
-      // 토큰을 발급 받았음.
-      // 이 때, 회원가입을 한 유저인지 아닌지를 판별해야함
-      //       access_token: 'ITthlRm1hjpqHtCPLhahqz0tzHW-oSrvGIDBnP8wCj10lwAAAYiD-t4w',
-      // token_type: 'bearer',
-      // refresh_token: 'vlPVCmDWe8KI0r66Mb78G4lSgIy3CWv5_ohe8I8ECj10lwAAAYiD-t4v',
-      // expires_in: 21599,
-      // scope: 'account_email profile_nickname',
-      // refresh_token_expires_in: 5183999
-      // 회원가입 했으면 그냥 토큰을 우리식대로 발급하고 끝
-      // 안했으면 email 정보를 id에 nickname을 nickname에 등록하면됨(비밀번호는 필요없음)
-      //
 
       const ACCESS_TOKEN = data.access_token;
       const userInform = await axios.get('https://kapi.kakao.com/v2/user/me', {
@@ -88,18 +77,7 @@ export class UserService {
           'Content-type': 'application/x-www-form-urlencoded',
         },
       });
-      //       id: 2818870231,
-      // connected_at: '2023-06-04T01:15:16Z',
-      // properties: { nickname: '홍용기' },
-      // kakao_account: {
-      //   profile_nickname_needs_agreement: false,
-      //   profile: { nickname: '홍용기' },
-      //   has_email: true,
-      //   email_needs_agreement: false,
-      //   is_email_valid: true,
-      //   is_email_verified: true,
-      //   email: 'calmmne@naver.com'
-      // }
+
       const userInformResponse = userInform.data;
       const {
         id,
@@ -143,21 +121,21 @@ export class UserService {
     }
   }
 
-  async socialLoginGoogle(code: string) {
+  async socialLoginNaver(code: string, state: string) {
     const postBody = {
       code,
-      client_id: `${process.env.GOOGLE_CLIENT_ID}`,
-      redirect_uri: `${process.env.GOOGLE_REDIRECT_URL}`,
+      client_id: `${process.env.NAVER_CLIENT_ID}`,
+      redirect_uri: `${process.env.NAVER_REDIRECT_URL}`,
       grant_type: 'authorization_code',
-      client_secret: `${process.env.GOOGLE_CLIENT_SECRET_KEY}`,
-      access_type: 'offline',
+      client_secret: `${process.env.NAVER_CLIENT_SECRET_KEY}`,
+      state,
     };
 
     try {
       // fetch로 하니까 안됨.. why?
 
       const response = await axios.post(
-        `${process.env.GOOGLE_LOGIN_URL}`,
+        `${process.env.NAVER_LOGIN_URL}`,
         postBody,
         {
           headers: {
@@ -169,13 +147,12 @@ export class UserService {
       const data = response.data;
       const ACCESS_TOKEN = data.access_token;
       const userInform = await axios.get(
-        `https://www.googleapis.com/userinfo/v2/me?access_token=${ACCESS_TOKEN}`,
+        `https://openapi.naver.com/v1/nid/me?access_token=${ACCESS_TOKEN}`,
       );
 
       const userInformResponse = userInform.data;
-
-      const { email, name } = userInformResponse;
-      const nickname = name.replace(/ /g, '');
+      const { email, nickname } = userInformResponse.response;
+      const replacedNickname = nickname.replace(/ /g, '');
       const isUserExist = await this.userRepository.findOneBy({
         userId: email,
       });
@@ -188,21 +165,21 @@ export class UserService {
           jwtToken: ACCESS_TOKEN,
         };
         const jwtToken = this.jwtService.sign(payload);
-        return { nickname, jwtToken };
+        return { nickname: replacedNickname, jwtToken };
       } else {
         const hashedPassword = await bcrypt.hash(email, 10);
         // 비밀번호가  필요없음 그러나 일단은 email 로 만들기
         // 암호화
         const userObj = await this.userRepository.create({
           userId: email,
-          nickname,
+          nickname: replacedNickname,
           password: hashedPassword,
         });
         const user = await this.userRepository.save(userObj);
         const payload = { userId: email, sub: user.id, jwtToken: ACCESS_TOKEN };
 
         const jwtToken = this.jwtService.sign(payload);
-        return { nickname, jwtToken };
+        return { nickname: replacedNickname, jwtToken };
       }
     } catch (e) {
       console.log(e);
@@ -250,10 +227,15 @@ export class UserService {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
         });
-      } else if (loginType === 'google') {
+      } else if (loginType === 'naver') {
         const ACCESS_TOKEN = response.jwtToken;
+
         await axios.post(
-          `https://oauth2.googleapis.com/revoke?token=${ACCESS_TOKEN}`,
+          `https://nid.naver.com/oauth2.0/token?access_token=${encodeURIComponent(
+            ACCESS_TOKEN,
+          )}&service_provider=${'NAVER'}&client_secret=${
+            process.env.NAVER_CLIENT_SECRET_KEY
+          }&client_id=${process.env.NAVER_CLIENT_ID}&grant_type=delete`,
           {
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
@@ -291,7 +273,7 @@ export class UserService {
     }
   }
 
-  async googleLogout(token: string) {
+  async naverLogout(token: string) {
     const pureToken = token.substring(7);
     const response = this.jwtService.decode(pureToken) as {
       sub: number;
@@ -301,7 +283,11 @@ export class UserService {
     const ACCESS_TOKEN = response.jwtToken;
     try {
       await axios.post(
-        `https://oauth2.googleapis.com/revoke?token=${ACCESS_TOKEN}`,
+        `https://nid.naver.com/oauth2.0/token?access_token=${encodeURIComponent(
+          ACCESS_TOKEN,
+        )}&service_provider=${'NAVER'}&client_secret=${
+          process.env.NAVER_CLIENT_SECRET_KEY
+        }&client_id=${process.env.NAVER_CLIENT_ID}&grant_type=delete`,
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',

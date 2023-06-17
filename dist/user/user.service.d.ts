@@ -22,12 +22,12 @@ export declare class UserService {
         nickname: any;
         jwtToken: string;
     }>;
-    socialLoginGoogle(code: string): Promise<{
+    socialLoginNaver(code: string, state: string): Promise<{
         nickname: any;
         jwtToken: string;
     }>;
     updateNickname(token: string, nickname: string): Promise<import("typeorm").UpdateResult>;
     deleteUser(token: string, loginType: string): Promise<import("typeorm").DeleteResult>;
     kakaoLogout(token: string): Promise<void>;
-    googleLogout(token: string): Promise<void>;
+    naverLogout(token: string): Promise<void>;
 }

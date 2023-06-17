@@ -24,8 +24,9 @@ export declare class UserController {
         code: string;
     }): Promise<void>;
     kakaoLogout(req: any): Promise<void>;
-    googleLogin(res: any, query: {
+    naverLogin(res: any, query: {
         code: string;
+        state: string;
     }): Promise<void>;
-    googleLogout(req: any): Promise<void>;
+    naverLogout(req: any): Promise<void>;
 }

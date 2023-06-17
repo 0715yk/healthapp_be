@@ -59,9 +59,9 @@ let UserController = class UserController {
     async kakaoLogout(req) {
         await this.userSerivce.kakaoLogout(req.headers['authorization']);
     }
-    async googleLogin(res, query) {
-        const { code } = query;
-        const response = await this.userSerivce.socialLoginGoogle(code);
+    async naverLogin(res, query) {
+        const { code, state } = query;
+        const response = await this.userSerivce.socialLoginNaver(code, state);
         if (response === null || response === void 0 ? void 0 : response.jwtToken) {
             return res.redirect(`${process.env.FE_URL}main?code=${response.jwtToken}`);
         }
@@ -69,8 +69,8 @@ let UserController = class UserController {
             return res.redirect(`${process.env.CANCEL_REDIRECT_URL}?type=cancel`);
         }
     }
-    async googleLogout(req) {
-        await this.userSerivce.googleLogout(req.headers['authorization']);
+    async naverLogout(req) {
+        await this.userSerivce.naverLogout(req.headers['authorization']);
     }
 };
 __decorate([
@@ -171,21 +171,21 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "kakaoLogout", null);
 __decorate([
-    (0, common_1.Get)('google'),
+    (0, common_1.Get)('naver'),
     __param(0, (0, common_1.Res)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "googleLogin", null);
+], UserController.prototype, "naverLogin", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
-    (0, common_1.Get)('googleLogout'),
+    (0, common_1.Get)('naverLogout'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "googleLogout", null);
+], UserController.prototype, "naverLogout", null);
 UserController = __decorate([
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [user_service_1.UserService,

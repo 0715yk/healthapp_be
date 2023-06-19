@@ -1,8 +1,5 @@
 import { User } from './entities/user.entity';
-import {
-  SocialLoginUserRequestDto,
-  UserRequestDto,
-} from './dto/users.request.dto';
+import { UserRequestDto } from './dto/users.request.dto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -151,32 +148,32 @@ export class UserService {
       );
 
       const userInformResponse = userInform.data;
-      const { email, nickname } = userInformResponse.response;
+      const { id, nickname } = userInformResponse.response;
       const replacedNickname = nickname.replace(/ /g, '');
       const isUserExist = await this.userRepository.findOneBy({
-        userId: email,
+        userId: id,
       });
 
       if (isUserExist) {
         // 이미 존재한다면
         const payload = {
-          userId: email,
+          userId: id,
           sub: isUserExist.id,
           jwtToken: ACCESS_TOKEN,
         };
         const jwtToken = this.jwtService.sign(payload);
         return { nickname: replacedNickname, jwtToken };
       } else {
-        const hashedPassword = await bcrypt.hash(email, 10);
+        const hashedPassword = await bcrypt.hash(id, 10);
         // 비밀번호가  필요없음 그러나 일단은 email 로 만들기
         // 암호화
         const userObj = await this.userRepository.create({
-          userId: email,
+          userId: id,
           nickname: replacedNickname,
           password: hashedPassword,
         });
         const user = await this.userRepository.save(userObj);
-        const payload = { userId: email, sub: user.id, jwtToken: ACCESS_TOKEN };
+        const payload = { userId: id, sub: user.id, jwtToken: ACCESS_TOKEN };
 
         const jwtToken = this.jwtService.sign(payload);
         return { nickname: replacedNickname, jwtToken };
@@ -214,7 +211,6 @@ export class UserService {
       };
 
       const id = response.sub;
-
       await this.datesRepository.delete({ userId: id });
       const result = await this.userRepository.delete({ id: id });
 

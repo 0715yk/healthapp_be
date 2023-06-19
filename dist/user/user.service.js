@@ -122,14 +122,14 @@ let UserService = class UserService {
             const ACCESS_TOKEN = data.access_token;
             const userInform = await axios_1.default.get(`https://openapi.naver.com/v1/nid/me?access_token=${ACCESS_TOKEN}`);
             const userInformResponse = userInform.data;
-            const { email, nickname } = userInformResponse.response;
+            const { id, nickname } = userInformResponse.response;
             const replacedNickname = nickname.replace(/ /g, '');
             const isUserExist = await this.userRepository.findOneBy({
-                userId: email,
+                userId: id,
             });
             if (isUserExist) {
                 const payload = {
-                    userId: email,
+                    userId: id,
                     sub: isUserExist.id,
                     jwtToken: ACCESS_TOKEN,
                 };
@@ -137,14 +137,14 @@ let UserService = class UserService {
                 return { nickname: replacedNickname, jwtToken };
             }
             else {
-                const hashedPassword = await bcrypt.hash(email, 10);
+                const hashedPassword = await bcrypt.hash(id, 10);
                 const userObj = await this.userRepository.create({
-                    userId: email,
+                    userId: id,
                     nickname: replacedNickname,
                     password: hashedPassword,
                 });
                 const user = await this.userRepository.save(userObj);
-                const payload = { userId: email, sub: user.id, jwtToken: ACCESS_TOKEN };
+                const payload = { userId: id, sub: user.id, jwtToken: ACCESS_TOKEN };
                 const jwtToken = this.jwtService.sign(payload);
                 return { nickname: replacedNickname, jwtToken };
             }
